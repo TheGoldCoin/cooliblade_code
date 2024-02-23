@@ -15,14 +15,16 @@
   // IO
     // Button pins
       #define rdy_btn_pin 2
-      #define jog_fw_pin 4
-      #define jog_bw_pin 7
-      #define stop_btn_pin 3
-      #define test_btn_pin 50
+      #define jog_fw_pin 6
+      #define jog_bw_pin 5
+      #define reset_btn 4
+      #define stop_btn_pin 4
+      #define test_btn_pin 7
 
     // Leds
-      #define rdy_led 7
-      #define error_led 6
+      #define rdy_led 12
+      #define error_led 13
+      #define reset_led 11
 
     // Button values
       //int rdy_btn = 0;
@@ -36,19 +38,19 @@
       int testState = 0;
 
     // stepper
-      int step_enable_A_pin = 10;
+      int step_enable_A_pin = 8;
       int step_enable_B_pin = 11;
       int step_enable_C_pin = 12;
 
-      int roll_stepPin = 13;
-      int roll_dirPin = 14;
+      int roll_stepPin = 10;
+      int roll_dirPin = 19;
       int motorInterfaceType = 1;
     
     // stepper declaration
       AccelStepper RollStepper = AccelStepper(motorInterfaceType, roll_stepPin, roll_dirPin);
 
     //state machines from automaton
-    Atm_led Latch;
+    Atm_led RdyLatch;
     Atm_button rdy_btn;
       
 void setup() {
@@ -66,9 +68,10 @@ void setup() {
       pinMode(roll_dirPin, OUTPUT);
    Serial.begin(9600);
 
-    RdyLatch.begin(); 
+    RdyLatch.begin(7); 
     rdy_btn.begin(2);
-    rdy_btn.onPress(rdy_btn, Latch.EVT_ON);
+    rdy_btn.onPress(rdy_btn, RdyLatch.EVT_ON);
+
 }
 
 void read(){

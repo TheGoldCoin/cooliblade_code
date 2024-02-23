@@ -1,0 +1,140 @@
+#include <Automaton.h>
+#include <AccelStepper.h>
+
+Atm_button RdyBTN, ResetBTN, StopBTN, Calibration;
+Atm_led ledRdy, ledErr, ledRes;
+Atm_comparator cmp;
+
+  // variables
+    int pos = 0;
+
+    //stepper
+      bool step_enable_A = false;
+      bool step_enable_B = false;
+      bool step_enable_C = false;
+
+  // State 1 = idle, 2 = enabled, 3 = error / stopped
+    int state = 0;
+
+  // IO
+    // Button pins
+      #define rdy_btn_pin 2
+      #define jog_fw_pin 6
+      #define jog_bw_pin 5
+      #define reset_btn 4
+      #define stop_btn_pin 4
+      #define test_btn_pin 7
+      #define pot_pin A8
+
+    // Leds
+      #define rdy_led 12
+      #define error_led 13
+      #define reset_led 11
+
+    // stepper
+      int step_enable_A_pin = 8;
+      int step_enable_B_pin = 16;
+      int step_enable_C_pin = 12;
+
+      int roll_stepPin = 10;
+      int roll_dirPin = 9;
+      int motorInterfaceType = 1;
+
+      int B_stepPin = 14;
+      int B_dirPin = 15;
+
+      int RollSpeed = 200;
+    
+    // stepper declaration
+      AccelStepper RollStepper = AccelStepper(motorInterfaceType, roll_stepPin, roll_dirPin);
+      AccelStepper BStepper = AccelStepper(motorInterfaceType, B_stepPin, B_dirPin);
+
+static uint16_t threshold_list[] = 
+    { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 }; 
+
+void Reset( int idx, int v, int up ) {
+  if ( idx == 1 ) ledErr.trigger( ledErr.EVT_OFF );  
+  if ( idx == 1 ) ledRdy.trigger( ledRdy.EVT_OFF );
+  if ( idx == 1 ) ledRes.trigger( ledRes.EVT_ON );  
+  state = 1;
+  Serial.println(state);
+
+}
+void Ready( int idx, int v, int up ) {
+  if(state == 1){
+    if ( idx == 1 ) ledRes.trigger( ledRes.EVT_OFF );  
+    if ( idx == 1 ) ledRdy.trigger( ledRdy.EVT_ON ); 
+    state = 2; 
+    Serial.println(state);
+    }
+}
+void Stop( int idx, int v, int up ) {
+  if ( idx == 1 ) ledRes.trigger( ledRes.EVT_OFF );   
+  if ( idx == 1 ) ledRdy.trigger( ledRdy.EVT_OFF );  
+  if ( idx == 1 ) ledErr.trigger( ledErr.EVT_ON );  
+  state = 3;
+  Serial.println(state);
+}
+
+void Calib( int idx, int v, int up ) {
+  if (state != 2){
+    RollSpeed = analogRead(pot_pin);
+    state = 4;
+    Serial.println(state);
+    Serial.println(RollSpeed);
+  }
+
+}
+void cmp_callback( int idx, int v, int up ) {
+  RollSpeed = analogRead(pot_pin);
+  Serial.println(RollSpeed);
+}
+
+void setup() {
+ // Serial.begin(9600);
+  ledRdy.begin(12);
+  ledErr.begin(1);
+  ledRes.begin(11);
+  Calibration.begin(7)
+    .onPress(Calib, 1);
+
+  RdyBTN.begin(2)
+    .onPress(Ready, 1);
+
+  ResetBTN.begin(3)
+    .onPress(Reset, 1);
+
+  StopBTN.begin(4)
+    .onPress(Stop, 1);
+  
+
+  cmp.begin( A8, 50 )
+    .threshold( threshold_list, sizeof( threshold_list ) )
+    .onChange( Calib, 99 );
+}
+
+void loop() {
+  if(state == 2){
+   // roll();
+    BRoll();
+  }
+
+  automaton.run();
+}
+
+void BRoll(){
+  step_enable_B = true;
+  BStepper.setMaxSpeed(20000);
+  BStepper.setSpeed(RollSpeed); 
+  BStepper.runSpeed();
+
+}
+
+void roll(){
+  step_enable_A = true;
+  RollStepper.setMaxSpeed(20000);
+  RollStepper.setSpeed(RollSpeed); 
+  RollStepper.runSpeed();
+ return 0;
+}
+
