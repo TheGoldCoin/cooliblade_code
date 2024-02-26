@@ -1,7 +1,8 @@
 #include <Automaton.h>
 #include <AccelStepper.h>
+#include <Servo.h>
 
-Atm_button RdyBTN, ResetBTN, StopBTN, Calibration;
+Atm_button RdyBTN, ResetBTN, StopBTN, Calibration, TestBTN;
 Atm_led ledRdy, ledErr, ledRes;
 Atm_comparator cmp;
 
@@ -13,7 +14,7 @@ Atm_comparator cmp;
       bool step_enable_B = false;
       bool step_enable_C = false;
 
-  // State 1 = idle, 2 = enabled, 3 = error / stopped
+  // State 1 = reset, 2 = rdy, 3 = error / stopped
     int state = 0;
 
   // IO
@@ -21,16 +22,18 @@ Atm_comparator cmp;
       #define rdy_btn_pin 2
       #define jog_fw_pin 6
       #define jog_bw_pin 5
-      #define reset_btn 4
+      #define reset_btn 3
       #define stop_btn_pin 4
       #define test_btn_pin 7
       #define pot_pin A8
 
     // Leds
       #define rdy_led 12
-      #define error_led 13
+      #define error_led 1
       #define reset_led 11
 
+      #define servoPWM 8
+     Servo RollServo;
     // stepper
       int step_enable_A_pin = 8;
       int step_enable_B_pin = 16;
@@ -48,6 +51,13 @@ Atm_comparator cmp;
     // stepper declaration
       AccelStepper RollStepper = AccelStepper(motorInterfaceType, roll_stepPin, roll_dirPin);
       AccelStepper BStepper = AccelStepper(motorInterfaceType, B_stepPin, B_dirPin);
+
+    // IO: rajakytkimet
+
+    #define AYraj_pin 23
+    int AY_raja = 0;
+
+    bool confirmed = false;
 
 static uint16_t threshold_list[] = 
     { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 }; 
@@ -76,6 +86,10 @@ void Stop( int idx, int v, int up ) {
   Serial.println(state);
 }
 
+void Test( int idx, int v, int up ){
+  confirmed = true;
+}
+
 void Calib( int idx, int v, int up ) {
   if (state != 2){
     RollSpeed = analogRead(pot_pin);
@@ -91,7 +105,7 @@ void cmp_callback( int idx, int v, int up ) {
 }
 
 void setup() {
- // Serial.begin(9600);
+ //Serial.begin(9600);
   ledRdy.begin(12);
   ledErr.begin(1);
   ledRes.begin(11);
@@ -111,28 +125,83 @@ void setup() {
   cmp.begin( A8, 50 )
     .threshold( threshold_list, sizeof( threshold_list ) )
     .onChange( Calib, 99 );
+
+  BStepper.setMaxSpeed(2000);
+  BStepper.setAcceleration(100000);
+  RollStepper.setMaxSpeed(20000);
+  RollStepper.setSpeed(RollSpeed); 
+
+  RollServo.attach(servoPWM);
 }
 
 void loop() {
+
+  if (state == 1){
+    ResetLog();
+  }
+
   if(state == 2){
-   // roll();
-    BRoll();
+    //roll();
+    //BRoll();
+    //ServoFW();
   }
 
   automaton.run();
 }
 
+void ResetLog(){
+
+  //Pursottimen nollaus
+  AY_raja = digitalRead(AYraj_pin);
+
+  if (AY_raja == 0){
+    BStepper.setSpeed(1000);
+    BStepper.run();
+  }
+
+  //Kuittaus (testinappi)
+  TestBTN.begin(7)
+    .onPress()
+  //luukku
+
+  //valmius
+
+  //makasiini
+  
+}
+
+void RunLog(){
+
+}
+
+void ServoFW(){
+
+  int pos = 0;
+if (state == 2){
+  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    // in steps of 1 degree
+    RollServo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  }
+  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    RollServo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  }
+}
+}
+
+void ServoBW(){
+
+}
+
 void BRoll(){
   step_enable_B = true;
-  BStepper.setMaxSpeed(20000);
-  BStepper.setSpeed(RollSpeed); 
+  BStepper.setSpeed(1000);
   BStepper.runSpeed();
-
 }
 
 void roll(){
   step_enable_A = true;
-  RollStepper.setMaxSpeed(20000);
   RollStepper.setSpeed(RollSpeed); 
   RollStepper.runSpeed();
  return 0;
