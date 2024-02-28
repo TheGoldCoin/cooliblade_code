@@ -54,7 +54,14 @@ Atm_comparator cmp;
 
     // IO: rajakytkimet
 
-    #define AYraj_pin 23
+    #define A_Yraj_pin 23
+    #define A_Araj_pin 24
+
+    #define B_Yraj_pin 25
+    #define B_Araj_pin 26
+
+    #define Mag_raj_pin 27
+
     int AY_raja = 0;
 
     bool confirmed = false;
@@ -143,7 +150,7 @@ void loop() {
   if(state == 2){
     //roll();
     //BRoll();
-    //ServoFW();
+    ServoFW();
   }
 
   automaton.run();
@@ -152,22 +159,24 @@ void loop() {
 void ResetLog(){
 
   //Pursottimen nollaus
-  AY_raja = digitalRead(AYraj_pin);
+  AY_raja = digitalRead(A_Yraj_pin);
 
   if (AY_raja == 0){
+    digitalWrite(step_enable_B_pin, HIGH);
     BStepper.setSpeed(1000);
     BStepper.run();
   }
 
   //Kuittaus (testinappi)
   TestBTN.begin(7)
-    .onPress()
-  //luukku
-
-  //valmius
-
-  //makasiini
-  
+    .onPress(Test, 1);
+  // Jos raja = 1, confirm = true, luukku = 1
+  /*
+  if (Mag_raj = 0){
+    MagStepper.setSpeed(1000);
+    MagStepper.run();
+  }
+  */
 }
 
 void RunLog(){
@@ -178,12 +187,12 @@ void ServoFW(){
 
   int pos = 0;
 if (state == 2){
-  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+  for (pos = 0; pos <= 360; pos += 1) { // goes from 0 degrees to 180 degrees
     // in steps of 1 degree
     RollServo.write(pos);              // tell servo to go to position in variable 'pos'
     delay(15);                       // waits 15ms for the servo to reach the position
   }
-  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+  for (pos = 360; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
     RollServo.write(pos);              // tell servo to go to position in variable 'pos'
     delay(15);                       // waits 15ms for the servo to reach the position
   }
